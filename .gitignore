@@ -1,0 +1,6 @@
+*.pyc
+*__pycache__
+tabify/my_init.py
+runtest.py 
+tabify_test.js
+*DS_Store*
