@@ -1,3 +1,4 @@
+[![Build Status](https://travis-ci.org/nickmaccarthy/python-tabify.svg?branch=master)](https://travis-ci.org/nickmaccarthy/python-tabify.svg?branch=master)
 # tabify
 A python module that emulates the Kibana tabify method that converts nested Elasticsearch JSON responses into a consumable data structure.  The returned data is a list of dictionaries which can be used to easily build HTML tables or other graphing engines.  
 
