@@ -1,5 +1,5 @@
 """
-py-tabify module
+tabify module
 
 Emulates the Kibana Tabify module that flattens nested Elasticsearch responses into a consumable dictionary for use in things like HTML tables or other graphic engines
 
@@ -61,14 +61,14 @@ def print_as_json(object):
 class TabifyException(Exception):
     pass 
         
-def tabify(response):
+def tabify(response, **options):
     table = []
     # If we dont have converted JSON object, lets try to do that first
     if not isinstance(response, dict):
         try:
             response = json.loads(response)
-        except Exception as e:
-            raise Exception("Unable to convert response to JSON, reason: %s, please ensure you are sending either valid JSON or a python DICT to this method" % (e))
+        except TabifyException as e:
+            raise TabifyException("Unable to convert response to JSON, reason: %s, please ensure you are sending either valid JSON or a python DICT to this method" % (e))
 
     logger.debug("Our response:\n%s" % print_as_json(response))
 
@@ -78,14 +78,16 @@ def tabify(response):
         table_items = flatten(tree)
         
         logger.debug("table_items len: %s" % len(table_items))
-        logger.debug("table_items:\n%s" % (table_items))
+        logger.debug("table_items:\n%s" % (print_as_json(table_items)))
 
         if len(table_items) > 1:
             for items in table_items:
-                logger.debug("table_items len in for loop: %s" % (len(items)))
+                logger.debug("items len in for loop: %s" % (len(items)))
 
                 if isinstance(items, list):
+                    logger.debug("items is a list: %s" % (items))
                     for item in items:
+                        logger.debug("item: %s" % (item))
                         table.append(item)
                 else:
                     table.append(items)
@@ -93,11 +95,21 @@ def tabify(response):
         if len(table_items) == 1:
             logger.debug("we have 1 item in table_items:\n%s" % (print_as_json(table_items)))
             if isinstance(table_items[0], list):
-                #table.append(table_items[0][0])
                 for item in table_items[0]:
                     table.append(item)
             else:
                 table.append(table_items[0])
+    elif isinstance(response.get('hits'), dict):
+        for hit in response['hits']['hits']:
+            table.append(hit['_source'])
+
+    elif isinstance(response, list):
+        table = response 
+    
+    else:
+        raise TabifyException("Tabify() invalid response. Result set must have either 'aggregations' or 'hits' defined.")
+
+    logger.debug("here now...I am returning table: %s" % table)
 
     return table
 
@@ -113,6 +125,9 @@ def collectBucket(node, stack=[]):
         if isinstance(value, dict) or isinstance(value, list) and value:
             logger.debug("key: %s, value: %s" % (key, value))
 
+            if isinstance(value, dict) and value.get('value'):
+                return { key: value['value'] }
+            
             if "hits" in key and value.get('hits') and len(value.get('hits')) == 1:
                 ourd = value["hits"][0]
                 if "sort" in ourd:
@@ -124,13 +139,6 @@ def collectBucket(node, stack=[]):
                 nstack.append(key)
                 return extractTree(value, nstack)
 
-            if isinstance(value, dict) and len(value.items()) == 1:
-                nstack = list(stack)
-                nstack.append(key)
-                logger.debug("calling extractBuckets()")
-                logger.debug("stack: %s, value: %s" % (nstack, print_as_json(value)))
-                return extractTree([value], nstack)
-
             if "buckets" in key and len(value.keys()) > 1:
                 logger.debug("found my key to be buckets")
                 nstack = list(stack)
@@ -139,6 +147,7 @@ def collectBucket(node, stack=[]):
 
             nstack = list(stack)
             nstack.append(key)
+            logger.debug("re-running collectBucket()")
             return collectBucket(value, nstack)
     
     return node
@@ -239,5 +248,6 @@ def flatten(tree, parentNode={}):
             logger.debug("!!!!! We shouldnt be here!!")
             raise TabifyException("We shouldnt be here!")
 
+    logger.debug("flatten tree:\n%s" % print_as_json(tree))
     return tree
 
