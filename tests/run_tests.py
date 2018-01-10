@@ -12,12 +12,20 @@ sys.path.append(HERE)
 from tabify import tabify, print_as_json, TabifyException
 import results 
 
+
+
+
 class TestTabify(unittest.TestCase):
+
+
     def test_aggs(self):
         for item in results.agg_test_items:
             tabified = tabify(item['json_response'])
-            expected = item['expected_result'] 
-            self.assertItemsEqual(tabified, expected)
+            expected = item['expected_result']
+            if sys.version_info == (2):
+                self.assertItemsEqual(tabified, expected)
+            elif sys.version_info == (3):
+                self.assertCountEqual(tabified, expected)
 
     def test_exceptions(self):
         self.assertRaises(TabifyException, tabify, '{ "omg": "this causes and exception"}')
@@ -26,7 +34,10 @@ class TestTabify(unittest.TestCase):
         for item in results.hits_test_items:
             tabified = tabify(item['json_response'])
             expected = item['expected_result'] 
-            self.assertItemsEqual(tabified, expected)
-        
+            if sys.version_info == (2):
+                self.assertItemsEqual(tabified, expected)
+            elif sys.version_info == (3):
+                self.assertCountEqual(tabified, expected)
+
 if __name__ == "__main__":
     unittest.main()
