@@ -19,7 +19,48 @@ single_agg = """
     "timed_out": false
 }
 """
-
+standard_hits = """
+{
+    "took": 1,
+    "timed_out": false,
+    "_shards":{
+        "total" : 1,
+        "successful" : 1,
+        "skipped" : 0,
+        "failed" : 0
+    },
+    "hits":{
+        "total" : 1,
+        "max_score": 1.3862944,
+        "hits" : [
+            {
+                "_index" : "twitter",
+                "_type" : "tweet",
+                "_id" : "0",
+                "_score": 1.3862944,
+                "_source" : {
+                    "user" : "kimchy",
+                    "message": "trying out Elasticsearch",
+                    "date" : "2009-11-15T14:12:12",
+                    "likes" : 0
+                }
+            },
+            {
+                "_index" : "twitter",
+                "_type" : "tweet",
+                "_id" : "0",
+                "_score": 3.00,
+                "_source" : {
+                    "user" : "someotheruser",
+                    "message": "I love ES",
+                    "date" : "2009-11-15T22:12:12",
+                    "likes" : 30
+                }
+            }
+        ]
+    }
+}
+"""
 double_terms_nested = '''
 {
   "took": 2,
@@ -504,7 +545,102 @@ hits_agg = """
   }
 """
 
-test_items = [
+filters_agg = """
+{
+    "took": 30,
+    "timed_out": false,
+    "_shards": {
+      "total": 84,
+      "successful": 84,
+      "skipped": 81,
+      "failed": 0
+    },
+    "hits": {
+      "total": 90113,
+      "max_score": 0,
+      "hits": []
+    },
+  "aggregations": {
+    "messages": {
+      "buckets": {
+        "errors": {
+          "doc_count": 1
+        },
+        "warnings": {
+          "doc_count": 2
+        },
+        "other_messages": {
+          "doc_count": 1
+        }
+      }
+    }
+  }
+}
+"""
+
+sum_bucket_pipeline_agg = """
+{
+   "took": 11,
+   "timed_out": false,
+   "_shards": [],
+   "hits": [],
+   "aggregations": {
+      "sales_per_month": {
+         "buckets": [
+            {
+               "key_as_string": "2015/01/01 00:00:00",
+               "key": 1420070400000,
+               "doc_count": 3,
+               "sales": {
+                  "value": 550.0
+               }
+            },
+            {
+               "key_as_string": "2015/02/01 00:00:00",
+               "key": 1422748800000,
+               "doc_count": 2,
+               "sales": {
+                  "value": 60.0
+               }
+            },
+            {
+               "key_as_string": "2015/03/01 00:00:00",
+               "key": 1425168000000,
+               "doc_count": 2,
+               "sales": {
+                  "value": 375.0
+               }
+            }
+         ]
+      },
+      "sum_monthly_sales": {
+          "value": 985.0
+      }
+   }
+}
+"""
+
+hits_test_items = [
+  {
+    "json_response": standard_hits,
+    "expected_result": [
+      {
+        "user": "kimchy",
+        "message": "trying out Elasticsearch",
+        "date": "2009-11-15T14:12:12",
+        "likes": 0
+      },
+      {
+        "user": "someotheruser",
+        "message": "I love ES",
+        "date": "2009-11-15T22:12:12",
+        "likes": 30
+      }
+    ]
+  }
+]
+
+agg_test_items = [
 
     {
         "json_response": double_terms_nested,
@@ -802,6 +938,31 @@ test_items = [
     {
         "json_response": single_agg,
         "expected_result": [ { "queue_size": 138.0 } ]
+    },
+    {
+        "json_response": filters_agg,
+        "expected_result": [
+            {
+                "doc_count": 1,
+                "messages": "errors"
+            },
+            {
+                "doc_count": 2,
+                "messages": "warnings"
+            },
+            {
+                "doc_count": 1,
+                "messages": "other_messages"
+            }
+        ]
+    },
+    {
+        "json_response": sum_bucket_pipeline_agg,
+        "expected_result": [
+            {
+                "sum_monthly_sales": 985.0
+            }
+        ]
     }
 ]
 
