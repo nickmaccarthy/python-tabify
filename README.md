@@ -214,6 +214,7 @@ The above would generate html for a table:
 ```
 
 Which should render out to a table that looks like:
+
 | instance_type | error_message | doc_count |
 |--- |--- |--- |
 |logstash-shipper-plain|Uh ohs; you should really look into this one|36|
